@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encuesta Rondas de Humanización - Clínica Santa Bárbara</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#1B4EA1;--pd:#133978;--pl:#2463C4;--acc:#4A8EE0;--bg:#EEF4FB;--cbg:#fff;--t:#1A2B4A;--ts:#5A7090;--bd:#C5D8F0;--ok:#28A745;--err:#DC3545}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;-webkit-tap-highlight-color:transparent}
+.header{background:linear-gradient(135deg,var(--pd) 0%,var(--p) 60%,var(--pl) 100%);padding:14px 20px;box-shadow:0 4px 16px rgba(0,0,0,.22)}
+.header-inner{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:16px}
+.logo-wrap{background:#fff;border-radius:10px;padding:8px 14px;flex-shrink:0}
+.logo-wrap img{height:44px;display:block;max-width:200px;width:auto}
+.logo-fb{width:44px;height:44px;color:var(--p);display:flex;align-items:center;justify-content:center}
+.logo-fb svg{width:32px;height:32px}
+.header-text h1{color:#fff;font-size:1.15rem;font-weight:700;line-height:1.3}
+.header-text p{color:rgba(255,255,255,.82);font-size:.78rem;margin-top:3px}
+.prog-wrap{max-width:880px;margin:14px auto 0;padding:0 14px}
+.prog-meta{display:flex;justify-content:space-between;font-size:.75rem;color:var(--ts);margin-bottom:5px}
+.prog-track{height:7px;background:var(--bd);border-radius:4px;overflow:hidden}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--p),var(--acc));border-radius:4px;transition:width .4s ease}
+.main{max-width:880px;margin:18px auto;padding:0 14px 56px}
+.step-card{background:#fff;border-radius:14px;box-shadow:0 2px 18px rgba(27,78,161,.09);overflow:hidden;display:none}
+.step-card.active{display:block}
+.sec-hdr{position:relative;height:130px;overflow:hidden;background:linear-gradient(135deg,var(--pd),var(--pl))}
+.sec-hdr img{width:100%;height:100%;object-fit:cover;opacity:.55}
+.sec-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(19,57,120,.78) 0%,rgba(27,78,161,.55) 100%);display:flex;align-items:center;padding:18px 24px;gap:14px}
+.sec-ico{width:50px;height:50px;flex-shrink:0;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.sec-ico svg{width:26px;height:26px}
+.sec-title h2{color:#fff;font-size:1.08rem;font-weight:700}
+.sec-title p{color:rgba(255,255,255,.82);font-size:.76rem;margin-top:3px}
+.welcome-hdr{background:linear-gradient(135deg,var(--pd),var(--p));padding:32px 24px;text-align:center}
+.welcome-hdr h2{color:#fff;font-size:1.3rem;font-weight:700;margin-bottom:8px}
+.welcome-hdr p{color:rgba(255,255,255,.85);font-size:.88rem;line-height:1.5}
+.welcome-hdr .subtitle{color:rgba(255,255,255,.7);font-size:.78rem;margin-top:10px}
+.card-body{padding:24px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.full{grid-column:1/-1}
+.fg label{display:block;font-size:.83rem;font-weight:600;color:var(--pd);margin-bottom:6px}
+.fg label .req{color:var(--err);margin-left:2px}
+.fg input,.fg select{width:100%;padding:11px 14px;border:1.5px solid var(--bd);border-radius:8px;font-size:.9rem;color:var(--t);background:#fff;outline:none;-webkit-appearance:none;appearance:none}
+.fg select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A7090' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.fg input:focus,.fg select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(27,78,161,.1)}
+.fg input.err,.fg select.err{border-color:var(--err)}
+.q-list{display:flex;flex-direction:column;gap:16px}
+.q-item{background:#F6F9FE;border:1px solid var(--bd);border-radius:12px;padding:16px 18px}
+.q-item.has-err{border-color:var(--err);background:#FEF5F5}
+.q-num{font-size:.68rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.q-text{font-size:.92rem;font-weight:500;line-height:1.55;margin-bottom:14px}
+.resp-opts{display:flex;gap:8px;margin-bottom:12px}
+.rb{position:relative;flex:1}
+.rb input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+.rb label{display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 8px;border:2px solid var(--bd);border-radius:8px;cursor:pointer;font-weight:700;font-size:.88rem;background:#fff;color:var(--ts);user-select:none;min-height:44px}
+.rb.yes input:checked+label{background:var(--ok);border-color:var(--ok);color:#fff}
+.rb.no input:checked+label{background:var(--err);border-color:var(--err);color:#fff}
+.rb.na input:checked+label{background:#6C757D;border-color:#6C757D;color:#fff}
+.rb label:hover{border-color:var(--p);background:var(--bg)}
+.obs-lbl{font-size:.75rem;color:var(--ts);margin-bottom:4px;display:block}
+.obs-fld{width:100%;padding:9px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:.84rem;font-family:inherit;color:var(--t);background:#fff;resize:vertical;min-height:46px;outline:none}
+.obs-fld:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(27,78,161,.08)}
+.err-msg{font-size:.76rem;color:var(--err);margin-top:6px}
+.card-footer{padding:16px 24px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:10px;background:#FAFCFF;flex-wrap:wrap}
+.btn{padding:11px 20px;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;min-height:44px;font-family:inherit}
+.btn-p{background:var(--p);color:#fff}
+.btn-p:hover{background:var(--pd);box-shadow:0 4px 12px rgba(27,78,161,.25)}
+.btn-s{background:#fff;color:var(--p);border:2px solid var(--p)}
+.btn-s:hover{background:var(--bg)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-ok:hover{background:#218838}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.step-ind{font-size:.78rem;color:var(--ts);text-align:center;flex:1}
+.sum-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-c{background:var(--bg);border-radius:12px;padding:14px 10px;text-align:center}
+.stat-n{font-size:1.9rem;font-weight:800}
+.si{color:var(--ok)}.no{color:var(--err)}.na{color:#6C757D}
+.stat-l{font-size:.73rem;color:var(--ts);margin-top:3px}
+.info-box{padding:12px 16px;background:#F6F9FE;border-radius:12px;border:1px solid var(--bd);margin-bottom:16px}
+.info-box .lbl{font-size:.75rem;color:var(--ts);margin-bottom:5px}
+.sum-sec{margin-bottom:16px}
+.sum-sec-title{font-size:.7rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.sum-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bd)}
+.sum-val{font-size:.82rem;font-weight:700;flex-shrink:0;min-width:34px}
+.sum-q{font-size:.84rem;color:var(--t)}
+.sum-obs{font-size:.76rem;color:var(--ts);margin-top:2px}
+.upload-area{border:2px dashed var(--bd);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;background:#F6F9FE;user-select:none}
+.upload-area:hover,.upload-area.drag{border-color:var(--p);background:rgba(27,78,161,.05)}
+.up-title{font-size:.95rem;font-weight:600;color:var(--t);margin:10px 0 4px}
+.up-sub{font-size:.8rem;color:var(--ts)}
+.file-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.file-item{display:flex;align-items:center;gap:10px;background:#F6F9FE;border:1px solid var(--bd);border-radius:8px;padding:10px 12px}
+.file-ico{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-ico.pdf{background:#F8D7DA}
+.file-name{font-size:.84rem;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.file-size{font-size:.75rem;color:var(--ts);flex-shrink:0}
+.file-del{background:none;border:none;cursor:pointer;color:var(--err);padding:4px;display:flex}
+.file-thumb{width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0}
+.success-scr{text-align:center;padding:48px 24px}
+.success-ico{width:76px;height:76px;background:#E6F4EA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.success-scr h2{color:var(--ok);font-size:1.35rem;margin-bottom:10px}
+.success-scr p{color:var(--ts);font-size:.9rem;line-height:1.6}
+.load-ov{display:none;position:fixed;inset:0;background:rgba(27,78,161,.15);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center}
+.load-ov.show{display:flex}
+.load-box{background:#fff;border-radius:16px;padding:28px 36px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.spinner{width:44px;height:44px;border:4px solid var(--bd);border-top-color:var(--p);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:768px){
+  .header{padding:12px 16px}.logo-wrap img{height:38px}.header-text h1{font-size:1rem}.header-text p{font-size:.72rem}
+  .main{padding:0 12px 48px}.sec-hdr{height:110px}.welcome-hdr h2{font-size:1.15rem}
+  .card-body{padding:20px 18px}.card-footer{padding:14px 18px}.sum-stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  .header-inner{flex-direction:column;text-align:center;gap:10px}
+  .info-grid{grid-template-columns:1fr}.resp-opts{flex-wrap:wrap}.rb{min-width:calc(33% - 6px)}
+  .step-card{border-radius:12px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <img src="logo.png" alt="Clínica Santa Bárbara" onerror="this.style.display='none';this.parentElement.classList.add('logo-fb');this.parentElement.innerHTML='<svg fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' viewBox=\'0 0 24 24\'><path d=\'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z\'/></svg>'">
+    </div>
+    <div class="header-text">
+      <h1>Rondas de Humanización</h1>
+      <p>Clínica Santa Bárbara · Encuesta de evaluación</p>
+    </div>
+  </div>
+</header>
+
+<div class="prog-wrap">
+  <div class="prog-meta"><span id="pLabel">Información general</span><span id="pPct">0%</span></div>
+  <div class="prog-track"><div class="prog-bar" id="pBar" style="width:0%"></div></div>
+</div>
+
+<main class="main">
+
+  <!-- Paso 0: Bienvenida -->
+  <div class="step-card active" id="step-0">
+    <div class="welcome-hdr">
+      <h2>Bienvenido a la encuesta</h2>
+      <p>Esta evaluación es parte de las Rondas de Humanización en la Clínica Santa Bárbara.</p>
+      <div class="subtitle">20 preguntas distribuidas en 8 principios. Tiempo estimado: 8-10 minutos.</div>
+    </div>
+    <div class="card-body">
+      <div class="info-grid">
+        <div class="fg full">
+          <label>Servicio<span class="req">*</span></label>
+          <select id="servicio"><option value="">Cargando servicios...</option></select>
+        </div>
+        <div class="fg">
+          <label>Fecha de la ronda<span class="req">*</span></label>
+          <input type="date" id="fecha">
+        </div>
+        <div class="fg">
+          <label>Líder de la Ronda<span class="req">*</span></label>
+          <input type="text" id="lider" placeholder="Se completa automáticamente">
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="step-ind">Paso 1 de <span id="totSt"></span></span>
+      <button class="btn btn-p" onclick="nextStep()">Iniciar encuesta
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pasos generados dinámicamente -->
+
+  <!-- Paso éxito -->
+  <div class="step-card" id="step-success">
+    <div class="success-scr">
+      <div class="success-ico">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#28A745" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>¡Encuesta enviada exitosamente!</h2>
+      <p>Gracias por su participación.<br>Sus respuestas han sido registradas correctamente.</p>
+      <button class="btn btn-p" onclick="resetForm()" style="margin:24px auto 0">Nueva encuesta</button>
+    </div>
+  </div>
+
+</main>
+
+<div class="load-ov" id="loadOv">
+  <div class="load-box">
+    <div class="spinner"></div>
+    <div style="font-size:.88rem;color:var(--t);font-weight:600">Enviando...</div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// CONFIGURACIÓN SUPABASE
+// ════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://anzocvghshbkrclcrydt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cNHefDIrf8KVKRHTgMRtQw_Grx8W7d2';
+const STORAGE_BUCKET = 'soportes';
+
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ════════════════════════════════════════════════════
+// DEFINICIÓN DE SECCIONES Y PREGUNTAS
+// ════════════════════════════════════════════════════
+const SECTIONS = [
+{id:1,title:'1. Atención digna y respetuosa',subtitle:'7 criterios de evaluación',img:'https://images.unsplash.com/photo-1551601651-bc60f254d532?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+questions:['¿Se evalúa y favorece el abordaje integral para el manejo y disminución del dolor?','¿Se promueve el control de ruido y condiciones de silencio en áreas asistenciales y salas de espera?','¿Se respetan los horarios de sueño y descanso del paciente?','¿Se permite acompañamiento extendido o permanente en áreas de cuidado crítico o prolongado?','¿Se permite integrar elementos familiares en hospitalizaciones prolongadas?','¿Existe flexibilidad en los horarios de visitas según necesidades?','¿Se ofrece apoyo emocional a los duelos y respeto por el paciente fallecido?']},
+{id:2,title:'2. Consideración a necesidades especiales',subtitle:'4 criterios de evaluación',img:'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+questions:['¿Se brinda atención preferencial a niños, adultos mayores, embarazadas y personas con discapacidad?','¿Se da apoyo y flexibilidad en acompañantes para el paciente en estado final de vida?','¿Se consideran necesidades de pacientes de comunidades vulnerables (indígenas, LGBTI, etc.)?','¿Se permite el ingreso de mascotas terapéuticas según el protocolo institucional?']},
+{id:3,title:'3. Competencias del personal',subtitle:'3 criterios de evaluación',img:'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+questions:['¿El personal se presenta con nombre y cargo al paciente?','¿Se llama al paciente por su nombre?','¿El personal transmite calidez y bienestar biológico, psicológico y social?']},
+{id:4,title:'4. Derechos de los pacientes',subtitle:'1 criterio de evaluación',img:'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+questions:['¿Se asegura el conocimiento y comprensión de los derechos de los pacientes?']},
+{id:5,title:'5. Deberes de los pacientes',subtitle:'1 criterio de evaluación',img:'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
+questions:['¿Se asegura el conocimiento y comprensión de los deberes de los pacientes?']},
+{id:6,title:'6. Énfasis en una comunicación asertiva',subtitle:'2 criterios de evaluación',img:'https://images.unsplash.com/photo-1576669801838-a9a5dc0af82a?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+questions:['¿Se emplea comunicación asertiva (contacto visual, postura que brinda cercanía, escucha activa y gestos que enfatizan el discurso)?','¿Se brinda información con veracidad, claridad y oportunidad sobre el estado de salud, diagnósticos, procedimientos, riesgos y beneficios?']},
+{id:7,title:'7. Privacidad',subtitle:'1 criterio de evaluación',img:'https://images.unsplash.com/photo-1504813184591-01572f98c85f?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+questions:['¿Se garantiza la privacidad visual y auditiva del paciente (exposición física, baño, evaluación clínica) usando elementos como batas y biombos?']},
+{id:8,title:'8. Seguridad del paciente',subtitle:'1 criterio de evaluación',img:'https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?w=880&h=280&fit=crop&q=75',icon:`<svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+questions:['¿Hay un uso adecuado de alarmas y equipos sin generar angustia en el paciente?']}
+];
+
+let qOff=0;const offsets=SECTIONS.map(s=>{const o=qOff;qOff+=s.questions.length;return o;});
+const totalQ=qOff;let curStep=0;const totalSteps=1+SECTIONS.length+1+1+1;
+let uploadedFiles=[];
+
+document.getElementById('totSt').textContent = totalSteps;
+
+function genSteps(){
+  const main=document.querySelector('main');
+  const succ=document.getElementById('step-success');
+  SECTIONS.forEach((sec,si)=>{
+    const div=document.createElement('div');
+    div.className='step-card';div.id='step-'+(si+1);
+    const off=offsets[si];
+    let qh='';
+    sec.questions.forEach((q,qi)=>{
+      const n=off+qi+1,nm='q'+n;
+      qh+=`<div class="q-item" id="qi-${n}">
+        <div class="q-num">Pregunta ${n} de ${totalQ}</div>
+        <div class="q-text">${q}</div>
+        <div class="resp-opts">
+          <div class="rb yes"><input type="radio" name="${nm}" id="${nm}-si" value="SI"><label for="${nm}-si"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>SI</label></div>
+          <div class="rb no"><input type="radio" name="${nm}" id="${nm}-no" value="NO"><label for="${nm}-no"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>NO</label></div>
+          <div class="rb na"><input type="radio" name="${nm}" id="${nm}-na" value="N/A"><label for="${nm}-na"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>N/A</label></div>
+        </div>
+        <label class="obs-lbl">Observaciones (opcional)</label>
+        <textarea class="obs-fld" id="obs-${n}" placeholder="Escriba sus observaciones..." rows="2"></textarea>
+      </div>`;
+    });
+    div.innerHTML=`<div class="sec-hdr"><img src="${sec.img}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="sec-overlay"><div class="sec-ico">${sec.icon}</div><div class="sec-title"><h2>${sec.title}</h2><p>${sec.subtitle}</p></div></div></div>
+    <div class="card-body"><div class="q-list">${qh}</div></div>
+    <div class="card-footer">
+      <button class="btn btn-s" onclick="prevStep()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Anterior</button>
+      <span class="step-ind">Paso ${si+2} de ${totalSteps}</span>
+      <button class="btn btn-p" onclick="nextStep()">Siguiente<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>`;
+    main.insertBefore(div,succ);
+  });
+
+  // Paso archivos
+  const uploadDiv=document.createElement('div');
+  uploadDiv.className='step-card';uploadDiv.id='step-'+(SECTIONS.length+1);
+  uploadDiv.innerHTML=`<div class="sec-hdr"><div class="sec-overlay" style="background:linear-gradient(135deg,#133978,#1B4EA1)"><div class="sec-ico"><svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><div class="sec-title"><h2>9. Documentos adjuntos</h2><p>Cargar soportes o evidencias (opcional)</p></div></div></div>
+  <div class="card-body">
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');addFiles(event.dataTransfer.files)">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--p)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div class="up-title">Toque para seleccionar archivos</div>
+      <div class="up-sub">Fotos, im&aacute;genes o PDF &mdash; m&aacute;x. 10 MB por archivo</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*,.pdf" multiple style="display:none" onchange="addFiles(this.files)">
+    <div class="file-list" id="fileList"></div>
+  </div>
+  <div class="card-footer">
+    <button class="btn btn-s" onclick="prevStep()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Anterior</button>
+    <span class="step-ind">Paso ${SECTIONS.length+2} de ${totalSteps}</span>
+    <button class="btn btn-p" onclick="nextStep()">Ver resumen<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+  </div>`;
+  main.insertBefore(uploadDiv,succ);
+
+  // Resumen
+  const sumDiv=document.createElement('div');
+  sumDiv.className='step-card';sumDiv.id='step-'+(SECTIONS.length+2);
+  sumDiv.innerHTML=`<div class="sec-hdr"><div class="sec-overlay" style="background:linear-gradient(135deg,#133978,#1B4EA1)"><div class="sec-ico"><svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="sec-title"><h2>Resumen y envío</h2><p>Revise sus respuestas antes de enviar</p></div></div></div>
+  <div class="card-body" id="sum-body"></div>
+  <div class="card-footer">
+    <button class="btn btn-s" onclick="prevStep()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Anterior</button>
+    <span class="step-ind">Paso ${totalSteps-1} de ${totalSteps}</span>
+    <button class="btn btn-ok" id="submitBtn" onclick="submitSurvey()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Enviar encuesta</button>
+  </div>`;
+  main.insertBefore(sumDiv,succ);
+}
+
+function updProg(){
+  const pct=Math.round((curStep/(totalSteps-1))*100);
+  document.getElementById('pBar').style.width=pct+'%';
+  document.getElementById('pPct').textContent=pct+'%';
+  if(curStep===0)document.getElementById('pLabel').textContent='Información general';
+  else if(curStep<=SECTIONS.length)document.getElementById('pLabel').textContent=SECTIONS[curStep-1].title;
+  else if(curStep===SECTIONS.length+1)document.getElementById('pLabel').textContent='Documentos adjuntos';
+  else document.getElementById('pLabel').textContent='Resumen de respuestas';
+}
+function showStep(n){
+  document.querySelectorAll('.step-card').forEach(c=>c.classList.remove('active'));
+  const c=document.getElementById('step-'+n);
+  if(c){c.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+  updProg();
+}
+function valStep0(){
+  let ok=true;
+  ['servicio','fecha','lider'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el.value.trim()){el.classList.add('err');ok=false;}else el.classList.remove('err');
+  });
+  if(!ok)alert('Por favor complete todos los campos requeridos.');
+  return ok;
+}
+function valSec(si){
+  const sec=SECTIONS[si];const off=offsets[si];let ok=true;
+  sec.questions.forEach((_,qi)=>{
+    const n=off+qi+1;
+    const sel=document.querySelector('input[name="q'+n+'"]:checked');
+    const item=document.getElementById('qi-'+n);
+    if(!sel){
+      item.classList.add('has-err');
+      if(!item.querySelector('.err-msg')){const e=document.createElement('div');e.className='err-msg';e.textContent='Seleccione una opción: SI, NO o N/A.';item.appendChild(e);}
+      ok=false;
+    }else{
+      item.classList.remove('has-err');
+      const e=item.querySelector('.err-msg');if(e)e.remove();
+    }
+  });
+  if(!ok){const fe=document.querySelector('.q-item.has-err');if(fe)fe.scrollIntoView({behavior:'smooth',block:'center'});}
+  return ok;
+}
+function nextStep(){
+  if(curStep===0&&!valStep0())return;
+  if(curStep>=1&&curStep<=SECTIONS.length&&!valSec(curStep-1))return;
+  curStep++;
+  if(curStep===SECTIONS.length+2)buildSum();
+  showStep(curStep);
+}
+function prevStep(){if(curStep>0){curStep--;showStep(curStep);}}
+function fmtDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+y;}
+
+function buildSum(){
+  let si=0,no=0,na=0;
+  let h=`<div class="sum-stats">
+    <div class="stat-c"><div class="stat-n si" id="s-si">0</div><div class="stat-l">Respuestas SI</div></div>
+    <div class="stat-c"><div class="stat-n no" id="s-no">0</div><div class="stat-l">Respuestas NO</div></div>
+    <div class="stat-c"><div class="stat-n na" id="s-na">0</div><div class="stat-l">Respuestas N/A</div></div>
+    <div class="stat-c"><div class="stat-n" style="color:var(--p)">${totalQ}</div><div class="stat-l">Total preguntas</div></div>
+  </div>
+  <div class="info-box"><div class="lbl">Información general</div>
+    <div><strong>Servicio:</strong> ${document.getElementById('servicio').value}</div>
+    <div><strong>Fecha:</strong> ${fmtDate(document.getElementById('fecha').value)}</div>
+    <div><strong>Líder:</strong> ${document.getElementById('lider').value}</div>
+    ${uploadedFiles.length?`<div><strong>Archivos adjuntos:</strong> ${uploadedFiles.length} archivo(s)</div>`:''}
+  </div>`;
+  SECTIONS.forEach((sec,idx)=>{
+    const off=offsets[idx];
+    h+=`<div class="sum-sec"><div class="sum-sec-title">${sec.title}</div>`;
+    sec.questions.forEach((q,qi)=>{
+      const n=off+qi+1;
+      const v=document.querySelector('input[name="q'+n+'"]:checked')?.value||'—';
+      const obs=document.getElementById('obs-'+n)?.value||'';
+      if(v==='SI')si++;else if(v==='NO')no++;else if(v==='N/A')na++;
+      const col=v==='SI'?'var(--ok)':v==='NO'?'var(--err)':'#6C757D';
+      h+=`<div class="sum-row"><span class="sum-val" style="color:${col}">${v}</span><div><div class="sum-q">${q}</div>${obs?`<div class="sum-obs">Obs: ${obs}</div>`:''}</div></div>`;
+    });
+    h+='</div>';
+  });
+  document.getElementById('sum-body').innerHTML=h;
+  document.getElementById('s-si').textContent=si;
+  document.getElementById('s-no').textContent=no;
+  document.getElementById('s-na').textContent=na;
+}
+
+function collectRespuestas(){
+  const arr=[];
+  SECTIONS.forEach((sec,idx)=>{
+    const off=offsets[idx];
+    sec.questions.forEach((q,qi)=>{
+      const n=off+qi+1;
+      const v=document.querySelector('input[name="q'+n+'"]:checked')?.value||'';
+      const obs=document.getElementById('obs-'+n)?.value||'';
+      arr.push({n, pregunta:q, respuesta:v, observacion:obs});
+    });
+  });
+  return arr;
+}
+
+// ════════════════════════════════════════════════════
+// CARGA DE SERVICIOS DESDE SUPABASE
+// ════════════════════════════════════════════════════
+async function loadServicios(){
+  const sel=document.getElementById('servicio');
+  if (SUPABASE_URL === 'TU_PROJECT_URL_AQUI'){
+    sel.innerHTML='<option value="">⚠️ Configure SUPABASE_URL y SUPABASE_KEY</option>';
+    return;
+  }
+  try{
+    const {data,error}=await supa.from('procesos').select('servicio,lider').order('orden');
+    if(error)throw error;
+    if(data&&data.length){
+      sel.innerHTML='<option value="">-- Seleccione un servicio --</option>';
+      data.forEach(s=>{
+        const o=document.createElement('option');
+        o.value=s.servicio;o.dataset.lider=s.lider||'';o.textContent=s.servicio;
+        sel.appendChild(o);
+      });
+    }else{
+      sel.innerHTML='<option value="">⚠️ Sin datos en tabla "procesos"</option>';
+    }
+  }catch(e){
+    sel.innerHTML='<option value="">⚠️ Error: '+e.message+'</option>';
+  }
+}
+
+// ════════════════════════════════════════════════════
+// MANEJO DE ARCHIVOS
+// ════════════════════════════════════════════════════
+function addFiles(files){
+  Array.from(files).forEach(f=>{
+    if(f.size>10*1024*1024){alert('"'+f.name+'" supera los 10 MB.');return;}
+    uploadedFiles.push({file:f,name:f.name,size:f.size,type:f.type,preview:URL.createObjectURL(f)});
+    renderFiles();
+  });
+  const fi=document.getElementById('fileInput');if(fi)fi.value='';
+}
+function removeFile(idx){uploadedFiles.splice(idx,1);renderFiles();}
+function renderFiles(){
+  const list=document.getElementById('fileList');
+  if(!list)return;
+  if(!uploadedFiles.length){list.innerHTML='';return;}
+  list.innerHTML=uploadedFiles.map((f,i)=>{
+    const isPdf=f.type==='application/pdf';
+    const ico=isPdf
+      ?`<div class="file-ico pdf"><svg width="18" height="18" fill="none" stroke="#721C24" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>`
+      :`<img class="file-thumb" src="${f.preview}" alt="${f.name}">`;
+    const sz=f.size<1024*1024?(f.size/1024).toFixed(0)+' KB':((f.size/1024/1024).toFixed(1))+' MB';
+    return `<div class="file-item">${ico}<span class="file-name">${f.name}</span><span class="file-size">${sz}</span><button class="file-del" onclick="removeFile(${i})" title="Eliminar"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+// SUBIR ARCHIVOS A SUPABASE STORAGE
+// ════════════════════════════════════════════════════
+async function uploadFilesToStorage(servicio, fecha){
+  const results=[];
+  const folder = (servicio||'sinservicio').replace(/[^a-zA-Z0-9-_]/g,'_') + '_' + (fecha||new Date().toISOString().split('T')[0]);
+  for (let i=0; i<uploadedFiles.length; i++){
+    const f = uploadedFiles[i];
+    const safeName = Date.now() + '_' + i + '_' + f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path = folder + '/' + safeName;
+    try {
+      const {data, error} = await supa.storage.from(STORAGE_BUCKET).upload(path, f.file, {contentType:f.type, upsert:false});
+      if (error) throw error;
+      const {data:urlData} = supa.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      results.push({nombre:f.name, url:urlData.publicUrl});
+    } catch(e){
+      results.push({nombre:f.name, url:null, error:e.message});
+    }
+  }
+  return results;
+}
+
+// ════════════════════════════════════════════════════
+// ENVIAR ENCUESTA
+// ════════════════════════════════════════════════════
+async function submitSurvey(){
+  const btn=document.getElementById('submitBtn');btn.disabled=true;
+  document.getElementById('loadOv').classList.add('show');
+
+  const respuestas = collectRespuestas();
+  let si=0,no=0,na=0;
+  respuestas.forEach(r=>{ if(r.respuesta==='SI')si++; else if(r.respuesta==='NO')no++; else if(r.respuesta==='N/A')na++; });
+
+  const servicio = document.getElementById('servicio').value;
+  const fecha = document.getElementById('fecha').value;
+  const lider = document.getElementById('lider').value;
+
+  try{
+    // Subir archivos primero
+    let archivos = [];
+    if (uploadedFiles.length > 0){
+      archivos = await uploadFilesToStorage(servicio, fecha);
+    }
+    // Insertar registro en tabla respuestas
+    const {data,error}=await supa.from('respuestas').insert({
+      servicio, fecha, lider,
+      total_si: si, total_no: no, total_na: na,
+      respuestas: respuestas,
+      archivos: archivos
+    }).select();
+    if (error) throw error;
+
+    document.getElementById('loadOv').classList.remove('show');
+    document.querySelectorAll('.step-card').forEach(c=>c.classList.remove('active'));
+    document.getElementById('step-success').classList.add('active');
+    document.getElementById('pBar').style.width='100%';
+    document.getElementById('pPct').textContent='100%';
+    document.getElementById('pLabel').textContent='¡Completado!';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    document.getElementById('loadOv').classList.remove('show');btn.disabled=false;
+    alert('Error al enviar: ' + e.message);
+    console.error(e);
+  }
+}
+
+function resetForm(){
+  document.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false);
+  document.querySelectorAll('textarea').forEach(t=>t.value='');
+  document.querySelectorAll('.q-item').forEach(i=>i.classList.remove('has-err'));
+  document.querySelectorAll('.err-msg').forEach(e=>e.remove());
+  const sel=document.getElementById('servicio');
+  if(sel) sel.selectedIndex=0;
+  document.getElementById('lider').value='';
+  uploadedFiles=[];renderFiles();
+  document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
+  const sBtn=document.getElementById('submitBtn');if(sBtn)sBtn.disabled=false;
+  curStep=0;showStep(0);
+}
+
+// Auto-completa el líder al seleccionar un servicio
+document.getElementById('servicio').addEventListener('change',function(){
+  const opt=this.options[this.selectedIndex];
+  if(opt&&opt.dataset.lider) document.getElementById('lider').value=opt.dataset.lider;
+  else document.getElementById('lider').value='';
+});
+
+genSteps();
+showStep(0);
+document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
+loadServicios();
+</script>
+</body>
+</html>
