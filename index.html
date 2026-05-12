@@ -491,13 +491,17 @@ async function submitSurvey(){
     if (uploadedFiles.length > 0){
       archivos = await uploadFilesToStorage(servicio, fecha);
     }
-    // Insertar registro en tabla respuestas
-    const {data,error}=await supa.from('respuestas').insert({
-      servicio, fecha, lider,
-      total_si: si, total_no: no, total_na: na,
-      respuestas: respuestas,
-      archivos: archivos
-    }).select();
+    // Insertar registro mediante RPC (bypassa RLS via SECURITY DEFINER)
+    const {data,error}=await supa.rpc('submit_encuesta',{
+      p_servicio: servicio,
+      p_fecha: fecha,
+      p_lider: lider,
+      p_total_si: si,
+      p_total_no: no,
+      p_total_na: na,
+      p_respuestas: respuestas,
+      p_archivos: archivos
+    });
     if (error) throw error;
 
     document.getElementById('loadOv').classList.remove('show');
